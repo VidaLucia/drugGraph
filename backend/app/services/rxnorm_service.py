@@ -28,11 +28,7 @@ class RxNormService:
     ):
         self.client = client
 
-    async def _get_json(
-        self,
-        endpoint: str,
-        params: dict | None = None,
-    ) -> dict:
+    async def _get_json(self,endpoint: str,params: dict | None = None,) -> dict:
 
         try:
             response = await self.client.get(
@@ -66,10 +62,7 @@ class RxNormService:
                 "RxNorm returned invalid JSON."
             ) from exc
 
-    async def search_drug(
-        self,
-        name: str,
-    ) -> DrugConcept | None:
+    async def search_drug(self,name: str,) -> DrugConcept | None:
 
         if not name or not name.strip():
             return None
@@ -83,10 +76,7 @@ class RxNormService:
 
         return await self.get_concept(rxcui)
 
-    async def find_rxcui(
-        self,
-        name: str,
-    ) -> str | None:
+    async def find_rxcui(self,name: str,) -> str | None:
 
         data = await self._get_json(
             "/rxcui.json",
@@ -107,10 +97,7 @@ class RxNormService:
 
         return ids[0]
 
-    async def get_concept(
-        self,
-        rxcui: str,
-    ) -> DrugConcept | None:
+    async def get_concept(self,rxcui: str,) -> DrugConcept | None:
 
         data = await self._get_json(
             f"/rxcui/{rxcui}/properties.json"
@@ -135,11 +122,7 @@ class RxNormService:
                 f"{exc.args[0]}"
             ) from exc
 
-    async def get_related_concepts(
-        self,
-        rxcui: str,
-        term_types: list[str] | None = None,
-    ) -> list[RelatedDrugConcept]:
+    async def get_related_concepts(self,rxcui: str,term_types: list[str] | None = None,) -> list[RelatedDrugConcept]:
 
         if term_types is None:
             term_types = self.DEFAULT_RELATED_TYPES
@@ -188,3 +171,4 @@ class RxNormService:
                     ) from exc
 
         return results
+    
