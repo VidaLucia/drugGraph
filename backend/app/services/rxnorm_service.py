@@ -1,20 +1,38 @@
-# RXNorm service
 import httpx
-from app.schema.drug import DrugConcept
+
+from app.schema.drug import (
+    DrugConcept,
+    RelatedDrugConcept,
+)
+
 from app.services.exceptions import (
     RxNormUnavailableError,
     RxNormResponseError,
 )
 
-# https://lhncbc.nlm.nih.gov/MOR/RxTerms/
-# https://www.nlm.nih.gov/research/umls/rxnorm/docs/techdoc.html
-# https://www.nlm.nih.gov/research/umls/rxnorm/docs/appendix5.html
+
 class RxNormService:
+
     BASE_URL = "https://rxnav.nlm.nih.gov/REST"
-    
-    def __init__(self, client: httpx.AsyncClient):
+
+    DEFAULT_RELATED_TYPES = [
+        "IN",
+        "BN",
+        "SCD",
+        "SBD",
+    ]
+
+    def __init__(
+        self,
+        client: httpx.AsyncClient,
+    ):
         self.client = client
-    async def get_json(self,endpoint: str,params: dict | None = None,) -> dict:
+
+    async def _get_json(
+        self,
+        endpoint: str,
+        params: dict | None = None,
+    ) -> dict:
 
         try:
             response = await self.client.get(
@@ -31,7 +49,8 @@ class RxNormService:
 
         except httpx.HTTPStatusError as exc:
             raise RxNormUnavailableError(
-                f"RxNorm returned HTTP {exc.response.status_code}."
+                f"RxNorm returned HTTP "
+                f"{exc.response.status_code}."
             ) from exc
 
         except httpx.RequestError as exc:
@@ -46,27 +65,62 @@ class RxNormService:
             raise RxNormResponseError(
                 "RxNorm returned invalid JSON."
             ) from exc
-            
-    async def search_drug(self, name: str) -> DrugConcept | None:
-        rxcui = await self.find_rxcui(name)
+
+    async def search_drug(
+        self,
+        name: str,
+    ) -> DrugConcept | None:
+
+        if not name or not name.strip():
+            return None
+
+        rxcui = await self.find_rxcui(
+            name.strip()
+        )
+
         if rxcui is None:
             return None
+
         return await self.get_concept(rxcui)
-    
-    async def find_rxcui(self, name:str) -> str | None:
-        data = await self.get_json("/rxcui.json",params={"name": name,"search": 2,},)
-        ids = data.get("idGroup", {}).get("rxnormId")
+
+    async def find_rxcui(
+        self,
+        name: str,
+    ) -> str | None:
+
+        data = await self._get_json(
+            "/rxcui.json",
+            params={
+                "name": name,
+                "search": 2,
+            },
+        )
+
+        ids = (
+            data
+            .get("idGroup", {})
+            .get("rxnormId")
+        )
 
         if not ids:
             return None
 
         return ids[0]
-    async def get_concept(self,rxcui: str,) -> DrugConcept | None:
 
-        data = await self.get_json(f"/rxcui/{rxcui}/properties.json")
+    async def get_concept(
+        self,
+        rxcui: str,
+    ) -> DrugConcept | None:
+
+        data = await self._get_json(
+            f"/rxcui/{rxcui}/properties.json"
+        )
+
         properties = data.get("properties")
+
         if not properties:
             return None
+
         try:
             return DrugConcept(
                 rxcui=properties["rxcui"],
@@ -77,8 +131,60 @@ class RxNormService:
 
         except KeyError as exc:
             raise RxNormResponseError(
-                f"Missing required RxNorm field: {exc.args[0]}"
+                f"Missing required RxNorm field: "
+                f"{exc.args[0]}"
             ) from exc
-    async def close(self):
-        await self.client.aclose()
-        
+
+    async def get_related_concepts(
+        self,
+        rxcui: str,
+        term_types: list[str] | None = None,
+    ) -> list[RelatedDrugConcept]:
+
+        if term_types is None:
+            term_types = self.DEFAULT_RELATED_TYPES
+
+        data = await self._get_json(
+            f"/rxcui/{rxcui}/related.json",
+            params={
+                "tty": " ".join(term_types)
+            },
+        )
+
+        concept_groups = (
+            data
+            .get("relatedGroup", {})
+            .get("conceptGroup", [])
+        )
+
+        results: list[RelatedDrugConcept] = []
+
+        for group in concept_groups:
+
+            concepts = group.get(
+                "conceptProperties",
+                [],
+            )
+
+            for concept in concepts:
+
+                try:
+                    results.append(
+                        RelatedDrugConcept(
+                            rxcui=concept["rxcui"],
+                            name=concept["name"],
+                            term_type=concept["tty"],
+                            synonym=(
+                                concept.get("synonym")
+                                or None
+                            ),
+                        )
+                    )
+
+                except KeyError as exc:
+                    raise RxNormResponseError(
+                        f"Missing required RxNorm field: "
+                        f"{exc.args[0]}"
+                    ) from exc
+
+        return results

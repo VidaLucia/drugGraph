@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.schema.drug import DrugConcept
+from app.schema.drug import DrugConcept, RelatedDrugConcept
 from app.services.rxnorm_service import RxNormService
 import httpx
 from app.services.exceptions import (
@@ -39,3 +39,19 @@ async def search_drug(q: str):
             detail=f"No drug found for '{q}'.",
         )
     return drug
+
+@router.get("/{rxcui}/related",response_model = list[RelatedDrugConcept])
+async def get_related_drug(rxcui:str):
+    try:
+        return await rxnorm_service.get_related_concepts(rxcui)
+    except RxNormUnavailableError:
+        raise HTTPException(
+            status_code=503,
+            detail="Drug data service is temporarily unavailable.",
+        )
+    except RxNormResponseError:
+        raise HTTPException(
+            status_code=502,
+            detail="Received an invalid response from the drug data service.",
+        )
+    
