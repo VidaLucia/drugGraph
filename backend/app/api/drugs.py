@@ -1,10 +1,13 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from app.schema.drug import (
     DrugConcept, 
     RelatedDrugConcept, 
     DrugRelationship,
     )
+from app.dependencies import get_drug_ingestion_service
 from app.services.rxnorm_service import RxNormService
+from app.dependencies import get_drug_ingestion_service
+from app.services.drug_ingestion_service import DrugIngestionService
 import httpx
 from app.services.exceptions import (
     RxNormUnavailableError,
@@ -67,7 +70,7 @@ from fastapi import Query
 )
 async def get_drug_relationships(
     rxcui: str,
-    rela: str = Query(...),
+    rela: list[str] = Query(...),
 ):
     try:
         return await rxnorm_service.get_related_by_relationship(
@@ -86,3 +89,32 @@ async def get_drug_relationships(
             status_code=502,
             detail="Received an invalid response from the drug data service.",
         )
+    
+@router.post("/ingest",response_model=DrugConcept)
+async def ingest_drug(name: str,
+    ingestion_service: DrugIngestionService = Depends(
+        get_drug_ingestion_service
+    ),
+):
+    try:
+        drug = await ingestion_service.ingest_drug(name)
+
+    except RxNormUnavailableError:
+        raise HTTPException(
+            status_code=503,
+            detail="Drug data service is temporarily unavailable.",
+        )
+
+    except RxNormResponseError:
+        raise HTTPException(
+            status_code=502,
+            detail="Received an invalid response from the drug data service.",
+        )
+
+    if drug is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No drug found for '{name}'.",
+        )
+
+    return drug
