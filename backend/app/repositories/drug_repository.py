@@ -55,5 +55,8 @@ class DrugRepository:
         
         self.session.add(entity)
         return entity
+    async def get_relationships(self,rxcui: str) -> list[DrugRelationshipEntity]:
+        result = await self.session.execute(select(DrugRelationshipEntity).where(DrugRelationshipEntity.source_rxcui == rxcui))
+        return list(result.scalars().all())
     async def commit(self):
         await self.session.commit()
