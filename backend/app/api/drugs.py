@@ -1,5 +1,9 @@
 from fastapi import APIRouter, HTTPException
-from app.schema.drug import DrugConcept, RelatedDrugConcept
+from app.schema.drug import (
+    DrugConcept, 
+    RelatedDrugConcept, 
+    DrugRelationship,
+    )
 from app.services.rxnorm_service import RxNormService
 import httpx
 from app.services.exceptions import (
@@ -54,4 +58,31 @@ async def get_related_drug(rxcui:str):
             status_code=502,
             detail="Received an invalid response from the drug data service.",
         )
-    
+from fastapi import Query
+
+
+@router.get(
+    "/{rxcui}/relationships",
+    response_model=list[DrugRelationship],
+)
+async def get_drug_relationships(
+    rxcui: str,
+    rela: str = Query(...),
+):
+    try:
+        return await rxnorm_service.get_related_by_relationship(
+            rxcui,
+            rela,
+        )
+
+    except RxNormUnavailableError:
+        raise HTTPException(
+            status_code=503,
+            detail="Drug data service is temporarily unavailable.",
+        )
+
+    except RxNormResponseError:
+        raise HTTPException(
+            status_code=502,
+            detail="Received an invalid response from the drug data service.",
+        )

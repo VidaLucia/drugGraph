@@ -3,6 +3,7 @@ import httpx
 from app.schema.drug import (
     DrugConcept,
     RelatedDrugConcept,
+    DrugRelationship
 )
 
 from app.services.exceptions import (
@@ -171,4 +172,49 @@ class RxNormService:
                     ) from exc
 
         return results
-    
+    async def get_relationship_types(self) -> list[str]:
+        data = await self._get_json(
+            "/relatypes.json"
+        )
+
+        return (
+            data
+            .get("relationTypeList", {})
+            .get("relationType", [])
+        )
+    async def get_related_by_relationship(self,rxcui: str,relationship: str,) -> list[DrugRelationship]:
+
+        data = await self._get_json(f"/rxcui/{rxcui}/related.json",params={"rela": relationship},)
+
+        concept_groups = (data.get("relatedGroup", {}).get("conceptGroup", []))
+
+        results: list[DrugRelationship] = []
+
+        for group in concept_groups:
+            concepts = group.get(
+                "conceptProperties",
+                []
+            )
+
+            for concept in concepts:
+                try:
+                    results.append(
+                        DrugRelationship(
+                            source_rxcui=rxcui,
+                            target_rxcui=concept["rxcui"],
+                            target_name=concept["name"],
+                            target_term_type=concept["tty"],
+                            relationship_type=relationship,
+                            target_synonym=(
+                                concept.get("synonym")
+                                or None
+                    ),))
+
+                except KeyError as exc:
+                    raise RxNormResponseError(
+                        f"Missing required RxNorm field: "
+                        f"{exc.args[0]}"
+                    ) from exc
+
+        return results
+        

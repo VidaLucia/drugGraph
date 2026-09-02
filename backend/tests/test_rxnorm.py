@@ -192,3 +192,47 @@ async def test_get_related_concepts_invalid_json():
 
     with pytest.raises(RxNormResponseError):
         await service.get_related_concepts("12345")
+
+@pytest.mark.asyncio
+async def test_get_related_by_relationship():
+
+    client = AsyncMock()
+
+    response = MagicMock()
+    response.raise_for_status.return_value = None
+
+    response.json.return_value = {
+        "relatedGroup": {
+            "conceptGroup": [
+                {
+                    "tty": "IN",
+                    "conceptProperties": [
+                        {
+                            "rxcui": "111111",
+                            "name": "Example Ingredient",
+                            "synonym": "",
+                            "tty": "IN",
+                            "rela": "has_ingredient",
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+
+    client.get.return_value = response
+
+    service = RxNormService(client)
+
+    results = await service.get_related_by_relationship(
+        "12345",
+        ["has_ingredient"],
+    )
+
+    assert len(results) == 1
+
+    relationship = results[0]
+
+    assert relationship.source_rxcui == "12345"
+    assert relationship.target_rxcui == "111111"
+    assert relationship.relationship_type == "has_ingredient"
