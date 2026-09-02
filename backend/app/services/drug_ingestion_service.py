@@ -22,17 +22,25 @@ class DrugIngestionService:
 
         await self.drug_repository.upsert_drug(drug)
 
-        relationships = (
-            await self.rxnorm_service.get_related_by_relationship(
-                drug.rxcui,
-                self.DEFAULT_RELATIONSHIPS,
-            )
-        )
+        for relationship_type in self.DEFAULT_RELATIONSHIPS:
 
-        for relationship in relationships:
-            target_drug = DrugConcept(rxcui=relationship.target_rxcui,name=relationship.target_name,term_type=relationship.target_term_type,synonym=relationship.target_synonym)
-            await self.drug_repository.upsert_drug(target_drug)
-            await self.drug_repository.add_relationship(relationship)
+            relationships = (
+                await self.rxnorm_service.get_related_by_relationship(
+                    drug.rxcui,
+                    relationship_type,
+                )
+            )
+            for relationship in relationships:
+
+                target_drug = DrugConcept(
+                    rxcui=relationship.target_rxcui,
+                    name=relationship.target_name,
+                    term_type=relationship.target_term_type,
+                    synonym=relationship.target_synonym,
+                )
+                await self.drug_repository.upsert_drug(target_drug)
+                await self.drug_repository.add_relationship(relationship)
+
         await self.drug_repository.commit()
 
         return drug
