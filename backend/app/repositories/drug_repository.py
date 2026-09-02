@@ -60,3 +60,9 @@ class DrugRepository:
         return list(result.scalars().all())
     async def commit(self):
         await self.session.commit()
+    
+    async def get_many_by_rxcui(self,rxcuis: list[str]) -> list[DrugEntity]:
+        if not rxcuis:
+            return []
+        result = await self.session.execute(select(DrugEntity).where(DrugEntity.rxcui.in_(rxcuis)))
+        return list(result.scalars().all())
