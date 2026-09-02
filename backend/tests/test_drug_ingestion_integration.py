@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 from app.repositories.drug_repository import DrugRepository
 from app.schema.drug import DrugConcept, DrugRelationship
 from app.services.drug_ingestion_service import DrugIngestionService
-
+from unittest.mock import AsyncMock, MagicMock, call
 
 @pytest.mark.asyncio
 async def test_ingest_drug_persists_drug_and_relationships(
@@ -32,6 +32,7 @@ async def test_ingest_drug_persists_drug_and_relationships(
 
     rxnorm_service.get_related_by_relationship.side_effect = [
         [relationship],
+        [],
         [],
     ]
 
@@ -69,3 +70,53 @@ async def test_ingest_drug_persists_drug_and_relationships(
     )
 
     assert relationship_exists is True
+
+@pytest.mark.asyncio
+async def test_expand_scdg_uses_scdg_relationships():
+    rxnorm_service = AsyncMock()
+    drug_repository = AsyncMock()
+
+    entity = MagicMock()
+    entity.rxcui = "1162132"
+    entity.name = "hydrochlorothiazide / metoprolol Oral Product"
+    entity.entity_type = "SCDG"
+    entity.synonym = None
+
+    drug_repository.get_by_rxcui.return_value = entity
+
+    rxnorm_service.get_related_by_relationship.side_effect = [
+        [],
+        [],
+        [],
+        [],
+        [],
+    ]
+
+    service = DrugIngestionService(
+        rxnorm_service=rxnorm_service,
+        drug_repository=drug_repository,
+    )
+
+    result = await service.expand_drug("1162132")
+
+    assert result is not None
+    assert result.rxcui == "1162132"
+    assert result.term_type == "SCDG"
+
+
+
+    rxnorm_service.get_related_by_relationship.assert_has_awaits(
+        [
+            call("1162132", "has_ingredient"),
+            call("1162132", "has_tradename"),
+            call("1162132", "inverse_isa"),
+            call("1162132", "has_doseformgroup"),
+            call("1162132", "has_form"),
+        ]
+    )
+
+    assert (
+        rxnorm_service.get_related_by_relationship.await_count
+        == 5
+    )
+    drug_repository.commit.assert_awaited_once()

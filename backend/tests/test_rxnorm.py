@@ -226,7 +226,7 @@ async def test_get_related_by_relationship():
 
     results = await service.get_related_by_relationship(
         "12345",
-        ["has_ingredient"],
+        "has_ingredient",
     )
 
     assert len(results) == 1
@@ -236,3 +236,45 @@ async def test_get_related_by_relationship():
     assert relationship.source_rxcui == "12345"
     assert relationship.target_rxcui == "111111"
     assert relationship.relationship_type == "has_ingredient"
+
+@pytest.mark.asyncio
+async def test_get_json_raises_response_error_on_400():
+    client = AsyncMock()
+
+    request = httpx.Request(
+        "GET",
+        "https://rxnav.nlm.nih.gov/REST/test"
+    )
+
+    response = httpx.Response(
+        400,
+        request=request,
+    )
+
+    client.get.return_value = response
+
+    service = RxNormService(client)
+
+    with pytest.raises(RxNormResponseError):
+        await service._get_json("/test")
+
+@pytest.mark.asyncio
+async def test_get_json_raises_unavailable_error_on_500():
+    client = AsyncMock()
+
+    request = httpx.Request(
+        "GET",
+        "https://rxnav.nlm.nih.gov/REST/test"
+    )
+
+    response = httpx.Response(
+        500,
+        request=request,
+    )
+
+    client.get.return_value = response
+
+    service = RxNormService(client)
+
+    with pytest.raises(RxNormUnavailableError):
+        await service._get_json("/test")

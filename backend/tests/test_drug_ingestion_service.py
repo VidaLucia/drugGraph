@@ -281,3 +281,78 @@ async def test_ingest_unknown_tty_skips_relationships():
     drug_repository.add_relationship.assert_not_awaited()
 
     drug_repository.commit.assert_awaited_once()
+
+@pytest.mark.asyncio
+async def test_expand_drug_success():
+    rxnorm_service = AsyncMock()
+    drug_repository = AsyncMock()
+
+    entity = AsyncMock()
+    entity.rxcui = "12345"
+    entity.name = "Metoprolol"
+    entity.entity_type = "IN"
+    entity.synonym = None
+
+    drug_repository.get_by_rxcui.return_value = entity
+
+    rxnorm_service.get_related_by_relationship.side_effect = [
+        [],
+        [],
+        [],
+    ]
+
+    service = DrugIngestionService(
+        rxnorm_service=rxnorm_service,
+        drug_repository=drug_repository,
+    )
+
+    result = await service.expand_drug("12345")
+
+    assert result == DrugConcept(
+        rxcui="12345",
+        name="Metoprolol",
+        term_type="IN",
+        synonym=None,
+    )
+
+    drug_repository.get_by_rxcui.assert_awaited_once_with(
+        "12345"
+    )
+
+    # We should NOT search RxNorm by name during expansion.
+    rxnorm_service.search_drug.assert_not_awaited()
+
+    rxnorm_service.get_related_by_relationship.assert_has_awaits(
+        [
+            call("12345", "ingredient_of"),
+            call("12345", "has_tradename"),
+            call("12345", "has_form"),
+        ]
+    )
+
+    drug_repository.commit.assert_awaited_once()
+    
+@pytest.mark.asyncio
+async def test_expand_drug_returns_none_when_not_found():
+    rxnorm_service = AsyncMock()
+    drug_repository = AsyncMock()
+
+    drug_repository.get_by_rxcui.return_value = None
+
+    service = DrugIngestionService(
+        rxnorm_service=rxnorm_service,
+        drug_repository=drug_repository,
+    )
+
+    result = await service.expand_drug(
+        "DOES_NOT_EXIST"
+    )
+
+    assert result is None
+
+    drug_repository.get_by_rxcui.assert_awaited_once_with(
+        "DOES_NOT_EXIST"
+    )
+
+    rxnorm_service.get_related_by_relationship.assert_not_awaited()
+    drug_repository.commit.assert_not_awaited()

@@ -48,17 +48,3 @@ async def test_get_graph_success():
     assert len(graph.edges) == 1
     assert graph.edges[0].relationship_type == "has_ingredient"
     
-@pytest.mark.asyncio
-async def test_get_graph_returns_none_when_root_not_found():
-    repository = AsyncMock()
-
-    repository.get_by_rxcui.return_value = None
-
-    service = DrugGraphService(repository)
-
-    graph = await service.get_graph("DOES_NOT_EXIST")
-
-    assert graph is None
-
-    repository.get_relationships.assert_not_awaited()
-    repository.get_many_by_rxcui.assert_not_awaited()

@@ -122,10 +122,7 @@ async def ingest_drug(name: str,
 
     return drug
 
-@router.get(
-    "/{rxcui}/graph",
-    response_model=DrugGraph,
-)
+@router.get("/{rxcui}/graph",response_model=DrugGraph)
 async def get_drug_graph(
     rxcui: str,
     graph_service: DrugGraphService = Depends(
@@ -141,3 +138,31 @@ async def get_drug_graph(
         )
 
     return graph
+
+@router.post("/{rxcui}/expand",response_model = DrugConcept)
+async def expand_drug(
+    rxcui: str,
+    ingestion_service: DrugIngestionService = Depends(get_drug_ingestion_service)
+):
+    try:
+        drug = await ingestion_service.expand_drug(rxcui)
+
+    except RxNormUnavailableError:
+        raise HTTPException(
+            status_code=503,
+            detail="Drug data service is temporarily unavailable.",
+        )
+
+    except RxNormResponseError:
+        raise HTTPException(
+            status_code=502,
+            detail="Received an invalid response from the drug data service.",
+        )
+
+    if drug is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Drug with RxCUI '{rxcui}' not found.",
+        )
+
+    return drug

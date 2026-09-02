@@ -28,15 +28,10 @@ class RxNormService:
         client: httpx.AsyncClient,
     ):
         self.client = client
-
     async def _get_json(self,endpoint: str,params: dict | None = None,) -> dict:
 
         try:
-            response = await self.client.get(
-                endpoint,
-                params=params,
-            )
-
+            response = await self.client.get(endpoint,params=params)
             response.raise_for_status()
 
         except httpx.TimeoutException as exc:
@@ -45,14 +40,21 @@ class RxNormService:
             ) from exc
 
         except httpx.HTTPStatusError as exc:
-            raise RxNormUnavailableError(
-                f"RxNorm returned HTTP "
-                f"{exc.response.status_code}."
+
+            status_code = exc.response.status_code
+
+            if 500 <= status_code < 600:
+                raise RxNormUnavailableError(
+                    f"RxNorm returned {status_code}."
+                ) from exc
+
+            raise RxNormResponseError(
+                f"RxNorm rejected the request with status {status_code}."
             ) from exc
 
         except httpx.RequestError as exc:
             raise RxNormUnavailableError(
-                "Could not connect to RxNorm."
+                "Unable to connect to RxNorm."
             ) from exc
 
         try:
@@ -62,7 +64,7 @@ class RxNormService:
             raise RxNormResponseError(
                 "RxNorm returned invalid JSON."
             ) from exc
-
+    
     async def search_drug(self,name: str,) -> DrugConcept | None:
 
         if not name or not name.strip():
