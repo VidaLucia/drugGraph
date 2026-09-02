@@ -8,6 +8,9 @@ from app.dependencies import get_drug_ingestion_service
 from app.services.rxnorm_service import RxNormService
 from app.dependencies import get_drug_ingestion_service
 from app.services.drug_ingestion_service import DrugIngestionService
+from app.schema.drug import DrugGraph
+from app.services.drug_graph_service import DrugGraphService
+from app.dependencies import get_drug_graph_service
 import httpx
 from app.services.exceptions import (
     RxNormUnavailableError,
@@ -118,3 +121,23 @@ async def ingest_drug(name: str,
         )
 
     return drug
+
+@router.get(
+    "/{rxcui}/graph",
+    response_model=DrugGraph,
+)
+async def get_drug_graph(
+    rxcui: str,
+    graph_service: DrugGraphService = Depends(
+        get_drug_graph_service
+    ),
+):
+    graph = await graph_service.get_graph(rxcui)
+
+    if graph is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Drug with RxCUI '{rxcui}' not found.",
+        )
+
+    return graph

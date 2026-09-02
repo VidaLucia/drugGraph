@@ -2,7 +2,7 @@ import httpx
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.services.drug_graph_service import DrugGraphService
 from app.db.session import get_db
 from app.repositories.drug_repository import DrugRepository
 from app.services.rxnorm_service import RxNormService
@@ -30,3 +30,6 @@ def get_drug_ingestion_service(
         rxnorm_service=rxnorm_service,
         drug_repository=drug_repository,
     )
+
+def get_drug_graph_service(drug_repository: DrugRepository = Depends(get_drug_repository)):
+    return DrugGraphService(drug_repository=drug_repository)
