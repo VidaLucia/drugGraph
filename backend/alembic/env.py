@@ -8,7 +8,10 @@ from alembic import context
 
 # import your Base
 from app.db.base import Base
-
+from app.models.drug_entity import (
+    DrugEntity,
+    DrugRelationshipEntity,
+)
 config = context.config
 
 if config.config_file_name is not None:
