@@ -17,6 +17,11 @@ class DrugIngestionService:
         "precise_ingredient_of",
     ],
 
+    "BN": [
+        "tradename_of",
+        "has_form",
+    ],
+
     "SCD": [
         "has_ingredient",
         "has_dose_form",
@@ -35,7 +40,7 @@ class DrugIngestionService:
         "inverse_isa",
         "has_doseformgroup",
         "has_form",
-    ]
+    ],
 }
 
     def __init__(self,rxnorm_service: RxNormService,drug_repository: DrugRepository):
