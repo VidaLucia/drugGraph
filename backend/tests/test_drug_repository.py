@@ -2,7 +2,7 @@ import pytest
 
 from app.repositories.drug_repository import DrugRepository
 from app.schema.drug import DrugConcept, DrugRelationship
-
+from app.schema.drug_class import DrugClassRelationship
 
 @pytest.mark.asyncio
 async def test_upsert_drug_creates_new_drug(db_session):
@@ -140,3 +140,64 @@ async def test_get_relationships(db_session):
     assert relationships[0].source_rxcui == "TEST200"
     assert relationships[0].target_rxcui == "TEST201"
     assert relationships[0].relationship_type == "has_ingredient"
+    
+@pytest.mark.asyncio
+async def test_upsert_drug_class_creates_new_class(db_session):
+    repository = DrugRepository(db_session)
+
+    drug_class = DrugClassRelationship(
+        source_rxcui="TEST300",
+        class_id="CLASS001",
+        class_name="Beta Blockers",
+        class_type="MOA",
+        relationship_type="has_moa",
+        relationship_source="MEDRT",
+    )
+
+    await repository.upsert_drug_class(drug_class)
+    await repository.commit()
+
+    saved = await repository.get_class_by_id("CLASS001")
+
+    assert saved is not None
+    assert saved.class_id == "CLASS001"
+    assert saved.name == "Beta Blockers"
+    assert saved.class_type == "MOA"
+    assert saved.source == "MEDRT"
+
+
+@pytest.mark.asyncio
+async def test_add_class_relationship_prevents_duplicate(db_session):
+    repository = DrugRepository(db_session)
+
+    drug = DrugConcept(
+        rxcui="TEST301",
+        name="Metoprolol",
+        term_type="IN",
+        synonym=None,
+    )
+
+    drug_class = DrugClassRelationship(
+        source_rxcui="TEST301",
+        class_id="CLASS002",
+        class_name="Adrenergic beta1-Antagonists",
+        class_type="MOA",
+        relationship_type="has_moa",
+        relationship_source="MEDRT",
+    )
+
+    await repository.upsert_drug(drug)
+    await repository.upsert_drug_class(drug_class)
+
+    first = await repository.add_class_relationship(
+        drug_class
+    )
+
+    await repository.commit()
+
+    second = await repository.add_class_relationship(
+        drug_class
+    )
+
+    assert first is not None
+    assert second is None

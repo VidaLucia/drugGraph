@@ -26,12 +26,18 @@ async def test_get_graph_success():
     relationship.relationship_type = "has_ingredient"
 
     repository.get_by_rxcui.return_value = root
+
     repository.get_relationships.return_value = [
         relationship
     ]
+
+    repository.get_class_relationships.return_value = []
+
     repository.get_many_by_rxcui.return_value = [
         target
     ]
+
+    repository.get_many_classes_by_id.return_value = []
 
     service = DrugGraphService(repository)
 
@@ -39,12 +45,15 @@ async def test_get_graph_success():
 
     assert graph is not None
 
-    assert graph.root.rxcui == "TEST300"
+    assert graph.root.id == "TEST300"
     assert graph.root.name == "Metoprolol"
+    assert graph.root.node_type == "DRUG"
+    assert graph.root.subtype == "IN"
+    assert graph.root.source == "RXNORM"
 
     assert len(graph.nodes) == 1
-    assert graph.nodes[0].rxcui == "TEST301"
+    assert graph.nodes[0].id == "TEST301"
+    assert graph.nodes[0].name == "Metoprolol Tartrate"
 
     assert len(graph.edges) == 1
     assert graph.edges[0].relationship_type == "has_ingredient"
-    

@@ -11,8 +11,9 @@ from sqlalchemy.ext.asyncio import (
 from app.models.drug_entity import (
     DrugEntity,
     DrugRelationshipEntity,
+    DrugClassEntity,
+    DrugClassRelationshipEntity,
 )
-
 
 TEST_DATABASE_URL = (
     "postgresql+asyncpg://postgres:postgres@localhost:5432/druggraph_test"
@@ -36,7 +37,15 @@ async def db_session():
     async with TestSessionLocal() as session:
 
         await session.execute(
+            delete(DrugClassRelationshipEntity)
+        )
+
+        await session.execute(
             delete(DrugRelationshipEntity)
+        )
+
+        await session.execute(
+            delete(DrugClassEntity)
         )
 
         await session.execute(

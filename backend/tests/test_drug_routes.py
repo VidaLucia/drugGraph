@@ -91,24 +91,29 @@ async def test_get_drug_graph_success():
 
     graph_service.get_graph.return_value = DrugGraph(
         root=DrugGraphNode(
-            rxcui="6918",
+            id="6918",
             name="metoprolol",
-            term_type="IN",
+            node_type="DRUG",
+            subtype="IN",
             synonym=None,
+            source="RXNORM",
         ),
         nodes=[
             DrugGraphNode(
-                rxcui="1162132",
+                id="1162132",
                 name="hydrochlorothiazide / metoprolol Oral Product",
-                term_type="SCDG",
+                node_type="DRUG",
+                subtype="SCDG",
                 synonym=None,
+                source="RXNORM",
             )
         ],
         edges=[
             DrugGraphEdge(
-                source_rxcui="6918",
-                target_rxcui="1162132",
+                source_id="6918",
+                target_id="1162132",
                 relationship_type="ingredient_of",
+                relationship_source="RXNORM",
             )
         ],
     )
@@ -132,9 +137,22 @@ async def test_get_drug_graph_success():
 
     data = response.json()
 
-    assert data["root"]["rxcui"] == "6918"
+    assert data["root"]["id"] == "6918"
+    assert data["root"]["name"] == "metoprolol"
+    assert data["root"]["node_type"] == "DRUG"
+    assert data["root"]["subtype"] == "IN"
+    assert data["root"]["source"] == "RXNORM"
+
     assert len(data["nodes"]) == 1
+    assert data["nodes"][0]["id"] == "1162132"
+    assert data["nodes"][0]["node_type"] == "DRUG"
+    assert data["nodes"][0]["subtype"] == "SCDG"
+
     assert len(data["edges"]) == 1
+    assert data["edges"][0]["source_id"] == "6918"
+    assert data["edges"][0]["target_id"] == "1162132"
+    assert data["edges"][0]["relationship_type"] == "ingredient_of"
+    assert data["edges"][0]["relationship_source"] == "RXNORM"
 
     graph_service.get_graph.assert_awaited_once_with(
         "6918"
