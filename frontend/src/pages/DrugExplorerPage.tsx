@@ -37,6 +37,8 @@ export default function DrugExplorerPage() {
     useState<string | null>(null);
   const [selectedEdge, setSelectedEdge] =
     useState<Edge | null>(null);
+  const [expandedNodeIds, setExpandedNodeIds] =
+    useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<GraphFilters>({
     drugSubtypes: new Set([
         "IN",
@@ -113,6 +115,7 @@ export default function DrugExplorerPage() {
       setLoading(true);
       setError(null);
       setSelectedNode(null);
+      setExpandedNodeIds(new Set());
 
       const drug =
         await ingestDrug(name);
@@ -123,6 +126,7 @@ export default function DrugExplorerPage() {
         );
 
       setGraph(graphData);
+      
     } catch (error) {
       console.error(error);
 
@@ -133,47 +137,50 @@ export default function DrugExplorerPage() {
       setLoading(false);
     }
   }
+    async function handleExpand(id: string) {
+    try {
+        setExpanding(true);
+        setError(null);
 
-  async function handleExpand(
-  id: string
-) {
-  try {
-    setExpanding(true);
-    setError(null);
+        if (expandedNodeIds.has(id)) {
+        return;
+        }
 
-    await expandDrug(id);
+        await expandDrug(id);
 
-    const expandedGraph =
-      await getDrugGraph(id);
+        const expandedGraph =
+        await getDrugGraph(id);
 
-    setGraph((currentGraph) => {
-      if (!currentGraph) {
-        return expandedGraph;
-      }
+        setGraph((currentGraph) => {
+        if (!currentGraph) {
+            return expandedGraph;
+        }
 
-      const merged =
-        mergeGraphs(
-          currentGraph,
-          expandedGraph
+        return mergeGraphs(
+            currentGraph,
+            expandedGraph
         );
+        });
 
-      return merged;
-    });
+        setExpandedNodeIds((current) => {
+        const next = new Set(current);
+        next.add(id);
+        return next;
+        });
+    } catch (error) {
+        console.error(error);
 
-  } catch (error) {
-    console.error(error);
-
-    if (error instanceof Error) {
-      setError(error.message);
-    } else {
-      setError(
-        "Unable to expand node."
-      );
+        if (error instanceof Error) {
+        setError(error.message);
+        } else {
+        setError(
+            "Unable to expand node."
+        );
+        }
+    } finally {
+        setExpanding(false);
     }
-  } finally {
-    setExpanding(false);
-  }
-}
+    }
   function handleNodeSelect(node: Node) {
     setSelectedNode(node);
     setSelectedEdge(null);
@@ -295,6 +302,8 @@ function clearClassSubtypes() {
             onClose={() => setSelectedNode(null)}
             onExpand={handleExpand}
             expanding={expanding}
+            isExpanded={expandedNodeIds.has(selectedNode.id)}
+
         />
         )}
 

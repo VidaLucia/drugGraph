@@ -5,6 +5,7 @@ type DrugDetailsPanelProps = {
   onClose: () => void;
   onExpand: (id: string) => void;
   expanding: boolean;
+  isExpanded: boolean;
 };
 
 export default function DrugDetailsPanel({
@@ -12,6 +13,7 @@ export default function DrugDetailsPanel({
   onClose,
   onExpand,
   expanding,
+  isExpanded,
 }: DrugDetailsPanelProps) {
   const nodeType = String(node.data.nodeType);
   const isDrug = nodeType === "DRUG";
@@ -76,10 +78,14 @@ export default function DrugDetailsPanel({
       {isDrug && (
         <button
           onClick={() => onExpand(node.id)}
-          disabled={expanding}
+          disabled={expanding || isExpanded}
           className="mt-8 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-medium transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {expanding ? "Expanding..." : "Expand Node"}
+          {isExpanded
+            ? "Expanded"
+            : expanding
+              ? "Expanding..."
+              : "Expand Node"}
         </button>
       )}
     </aside>
