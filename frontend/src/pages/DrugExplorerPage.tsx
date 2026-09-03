@@ -48,7 +48,7 @@ export default function DrugExplorerPage() {
       ...incoming.nodes,
     ].forEach((node) => {
       nodeMap.set(
-        node.rxcui,
+        node.id,
         node
       );
     });
@@ -61,9 +61,8 @@ export default function DrugExplorerPage() {
       ...incoming.edges,
     ].forEach((edge) => {
       const key =
-        `${edge.source_rxcui}-${edge.target_rxcui}-${edge.relationship_type}`;
-
-      edgeMap.set(
+        `${edge.source_id}-${edge.target_id}-${edge.relationship_type}-${edge.relationship_source}`;
+        edgeMap.set(
         key,
         edge
       );
@@ -76,8 +75,8 @@ export default function DrugExplorerPage() {
         nodeMap.values()
       ).filter(
         (node) =>
-          node.rxcui !==
-          current.root.rxcui
+          node.id !==
+          current.root.id
       ),
 
       edges: Array.from(
@@ -115,71 +114,45 @@ export default function DrugExplorerPage() {
   }
 
   async function handleExpand(
-    rxcui: string
-  ) {
-    try {
-      setExpanding(true);
-      setError(null);
+  id: string
+) {
+  try {
+    setExpanding(true);
+    setError(null);
 
-      await expandDrug(rxcui);
+    await expandDrug(id);
 
-      const expandedGraph =
-        await getDrugGraph(
-          rxcui
-        );
+    const expandedGraph =
+      await getDrugGraph(id);
 
-      setGraph((currentGraph) => {
-        if (!currentGraph) {
-          return expandedGraph;
-        }
-
-        const merged =
-          mergeGraphs(
-            currentGraph,
-            expandedGraph
-          );
-
-        console.log(
-          "CURRENT:",
-          currentGraph.nodes.length
-        );
-
-        console.log(
-          "INCOMING:",
-          expandedGraph.nodes.length
-        );
-
-        console.log(
-          "MERGED:",
-          merged.nodes.length
-        );
-
-        console.log(
-          "MERGED GRAPH:",
-          merged
-        );
-
-        return merged;
-      });
-
-    } catch (error) {
-      console.error(error);
-
-      if (
-        error instanceof Error
-      ) {
-        setError(
-          error.message
-        );
-      } else {
-        setError(
-          "Unable to expand node."
-        );
+    setGraph((currentGraph) => {
+      if (!currentGraph) {
+        return expandedGraph;
       }
-    } finally {
-      setExpanding(false);
+
+      const merged =
+        mergeGraphs(
+          currentGraph,
+          expandedGraph
+        );
+
+      return merged;
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    if (error instanceof Error) {
+      setError(error.message);
+    } else {
+      setError(
+        "Unable to expand node."
+      );
     }
+  } finally {
+    setExpanding(false);
   }
+}
   function handleNodeSelect(node: Node) {
     setSelectedNode(node);
     setSelectedEdge(null);

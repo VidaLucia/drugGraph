@@ -312,7 +312,7 @@ export default function GraphCanvas({
       graph.root,
       ...graph.nodes,
     ].map((drug) => ({
-      id: drug.rxcui,
+      id: drug.id,
 
       position: {
         x: 0,
@@ -323,11 +323,11 @@ export default function GraphCanvas({
 
     data: {
         label: drug.name,
-        termType: drug.term_type,
-        synonym: drug.synonym,
-        isRoot:
-            drug.rxcui === graph.root.rxcui,
-    },
+        termType: drug.subtype,
+        nodeType: drug.node_type,
+        source: drug.source,
+        isRoot: drug.id === graph.root.id,
+        },
 
       style: {
         width: NODE_WIDTH,
@@ -339,9 +339,9 @@ export default function GraphCanvas({
     }));
 
     const graphEdges: Edge[] = graph.edges.map((edge) => ({
-        id: `${edge.source_rxcui}-${edge.target_rxcui}-${edge.relationship_type}`,
-        source: edge.source_rxcui,
-        target: edge.target_rxcui,
+        id: `${edge.source_id}-${edge.target_id}-${edge.relationship_type}`,
+        source: edge.source_id,
+        target: edge.target_id,
 
         data: {
             relationshipType: edge.relationship_type,

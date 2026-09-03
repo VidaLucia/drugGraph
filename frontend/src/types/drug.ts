@@ -7,16 +7,19 @@ export type DrugConcept = {
 };
 
 export type DrugGraphNode = {
-  rxcui: string;
+  id: string;
   name: string;
-  term_type: string;
+  node_type: "DRUG" | "CLASS";
+  subtype: string;
   synonym: string | null;
+  source: string;
 };
 
 export type DrugGraphEdge = {
-  source_rxcui: string;
-  target_rxcui: string;
-  relationship_type: string;
+  source_id: string;
+  target_id: string;
+  relationship_type: string | null;
+  relationship_source: string | null;
 };
 
 export type DrugGraph = {

@@ -7,14 +7,18 @@ from app.db.session import get_db
 from app.repositories.drug_repository import DrugRepository
 from app.services.rxnorm_service import RxNormService
 from app.services.drug_ingestion_service import DrugIngestionService
-
+from app.services.rxclass_service import RxClassService
 
 async def get_rxnorm_service():
     async with httpx.AsyncClient(
         base_url="https://rxnav.nlm.nih.gov/REST"
     ) as client:
         yield RxNormService(client)
-
+async def get_rxclass_service():
+    async with httpx.AsyncClient(
+        base_url="https://rxnav.nlm.nih.gov/REST/rxclass"
+    ) as client:
+        yield RxClassService(client)
 
 def get_drug_repository(
     db: AsyncSession = Depends(get_db),
@@ -24,10 +28,12 @@ def get_drug_repository(
 
 def get_drug_ingestion_service(
     rxnorm_service: RxNormService = Depends(get_rxnorm_service),
+    rxclass_service: RxClassService = Depends(get_rxclass_service),
     drug_repository: DrugRepository = Depends(get_drug_repository),
 ):
     return DrugIngestionService(
         rxnorm_service=rxnorm_service,
+        rxclass_service=rxclass_service,
         drug_repository=drug_repository,
     )
 

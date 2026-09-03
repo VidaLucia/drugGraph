@@ -17,11 +17,11 @@ export default function RelationshipDetailsPanel({
     : [];
 
   const sourceNode = allNodes.find(
-    (node) => node.rxcui === edge.source
+    (node) => node.id === edge.source
   );
 
   const targetNode = allNodes.find(
-    (node) => node.rxcui === edge.target
+    (node) => node.id === edge.target
   );
 
   const relationship =

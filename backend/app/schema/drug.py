@@ -26,17 +26,18 @@ class DrugRelationship(BaseModel):
     source: str = "RXNORM"
 
 class DrugGraphNode(BaseModel):
-    rxcui: str
+    id: str
     name: str
-    term_type: str
+    node_type: str
+    subtype: str
     synonym: str | None = None
-
+    source: str
 
 class DrugGraphEdge(BaseModel):
-    source_rxcui: str
-    target_rxcui: str
-    relationship_type: str
-
+    source_id: str
+    target_id: str
+    relationship_type: str | None = None
+    relationship_source: str | None = None
 
 class DrugGraph(BaseModel):
     root: DrugGraphNode

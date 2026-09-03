@@ -1,7 +1,7 @@
 from app.schema.drug import DrugConcept
 from app.repositories.drug_repository import DrugRepository
 from app.services.rxnorm_service import RxNormService
-
+from app.services.rxclass_service import RxClassService
 
 class DrugIngestionService:
 
@@ -43,9 +43,10 @@ class DrugIngestionService:
     ],
 }
 
-    def __init__(self,rxnorm_service: RxNormService,drug_repository: DrugRepository):
+    def __init__(self,rxnorm_service: RxNormService,drug_repository: DrugRepository,rxclass_service: RxClassService | None = None):
         self.rxnorm_service = rxnorm_service
         self.drug_repository = drug_repository
+        self.rxclass_service = rxclass_service
 
     async def ingest_relationships(self,drug: DrugConcept) -> None:
         relationship_types = self.RELATIONSHIPS_BY_TERM_TYPE.get(drug.term_type,[])
@@ -60,14 +61,20 @@ class DrugIngestionService:
                 )
                 await self.drug_repository.upsert_drug(target_drug)
                 await self.drug_repository.add_relationship(relationship)
-
+    async def ingest_classes(self,drug:DrugConcept)-> None:
+        if self.rxclass_service is None:
+            return None
+        class_relationships = await self.rxclass_service.get_classes_by_rxcui(drug.rxcui)
+        for relationship in class_relationships:
+            await self.drug_repository.upsert_drug_class(relationship)
+            await self.drug_repository.add_class_relationship(relationship)
     async def ingest_drug(self,name: str) -> DrugConcept | None:
         drug = await self.rxnorm_service.search_drug(name)
-
         if drug is None:
             return None
         await self.drug_repository.upsert_drug(drug)
         await self.ingest_relationships(drug)
+        await self.ingest_classes(drug)
         await self.drug_repository.commit()
 
         return drug
@@ -83,6 +90,7 @@ class DrugIngestionService:
             synonym=entity.synonym,
         )
         await self.ingest_relationships(drug)
+        await self.ingest_classes(drug)
         await self.drug_repository.commit()
 
         return drug
