@@ -221,3 +221,4 @@ __marimo__/
 
 test_db_connection.py
 backend/alembic/versions/*
+
