@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16
+    container_name: druggraph-db
+    environment:
+      POSTGRES_DB: druggraph
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - druggraph_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d druggraph"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8000
+    container_name: druggraph-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+  backend:
+    build:
+      context: ./backend
+    container_name: druggraph-backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/druggraph
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  druggraph_postgres_data:
