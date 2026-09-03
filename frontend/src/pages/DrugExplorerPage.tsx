@@ -229,6 +229,7 @@ function toggleClassSubtype(subtype: string) {
           </div>
         )}
         <GraphFilterPanel
+            graph = {graph}
             drugSubtypes={filters.drugSubtypes}
             classSubtypes={filters.classSubtypes}
             onToggleDrugSubtype={toggleDrugSubtype}

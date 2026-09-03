@@ -26,11 +26,23 @@ const CLASS_FILTERS = [
 ];
 
 export default function GraphFilterPanel({
+  graph,
   drugSubtypes,
   classSubtypes,
   onToggleDrugSubtype,
   onToggleClassSubtype,
 }: GraphFilterPanelProps) {
+    const allNodes = graph? [graph.root, ...graph.nodes]: [];
+  function getCount(
+    nodeType: "DRUG" | "CLASS",
+    subtype: string
+  ) {
+    return allNodes.filter(
+      (node) =>
+        node.node_type === nodeType &&
+        node.subtype === subtype
+    ).length;
+  }
   return (
     <div className="absolute left-4 top-4 z-10 w-64 rounded-xl border border-slate-800 bg-slate-900/95 p-4 shadow-xl">
       <h2 className="text-sm font-semibold text-white">
@@ -56,7 +68,13 @@ export default function GraphFilterPanel({
                 }
               />
 
-              {filter.label}
+              <span className="flex flex-1 items-center justify-between gap-2">
+                <span>{filter.label}</span>
+
+                <span className="text-xs tabular-nums text-slate-500">
+                  {getCount("DRUG", filter.subtype)}
+                </span>
+              </span>
             </label>
           ))}
         </div>
@@ -81,7 +99,13 @@ export default function GraphFilterPanel({
                 }
               />
 
-              {filter.label}
+              <span className="flex flex-1 items-center justify-between gap-2">
+                <span>{filter.label}</span>
+
+                <span className="text-xs tabular-nums text-slate-500">
+                  {getCount("CLASS", filter.subtype)}
+                </span>
+              </span>
             </label>
           ))}
         </div>
