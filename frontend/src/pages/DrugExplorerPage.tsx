@@ -215,6 +215,47 @@ function toggleClassSubtype(subtype: string) {
     };
   });
 }
+function selectAllDrugSubtypes() {
+  setFilters((current) => ({
+    ...current,
+    drugSubtypes: new Set([
+      "IN",
+      "PIN",
+      "BN",
+      "SCD",
+      "SBD",
+      "SCDC",
+      "SCDF",
+      "SCDG",
+    ]),
+  }));
+}
+
+function clearDrugSubtypes() {
+  setFilters((current) => ({
+    ...current,
+    drugSubtypes: new Set(),
+  }));
+}
+
+function selectAllClassSubtypes() {
+  setFilters((current) => ({
+    ...current,
+    classSubtypes: new Set([
+      "ATC1-4",
+      "MOA",
+      "EPC",
+      "PE",
+    ]),
+  }));
+}
+
+function clearClassSubtypes() {
+  setFilters((current) => ({
+    ...current,
+    classSubtypes: new Set(),
+  }));
+}
   return (
     <div className="flex h-screen w-screen bg-slate-950 text-white">
       <Sidebar
@@ -234,6 +275,10 @@ function toggleClassSubtype(subtype: string) {
             classSubtypes={filters.classSubtypes}
             onToggleDrugSubtype={toggleDrugSubtype}
             onToggleClassSubtype={toggleClassSubtype}
+            onSelectAllDrugSubtypes={selectAllDrugSubtypes}
+            onClearDrugSubtypes={clearDrugSubtypes}
+            onSelectAllClassSubtypes={selectAllClassSubtypes}
+            onClearClassSubtypes={clearClassSubtypes}
             />
         <GraphCanvas
             graph={graph}

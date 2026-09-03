@@ -5,6 +5,10 @@ type GraphFilterPanelProps = {
   classSubtypes: Set<string>;
   onToggleDrugSubtype: (subtype: string) => void;
   onToggleClassSubtype: (subtype: string) => void;
+  onSelectAllDrugSubtypes: () => void;
+  onClearDrugSubtypes: () => void;
+  onSelectAllClassSubtypes: () => void;
+  onClearClassSubtypes: () => void;
 };
 
 const DRUG_FILTERS = [
@@ -31,6 +35,10 @@ export default function GraphFilterPanel({
   classSubtypes,
   onToggleDrugSubtype,
   onToggleClassSubtype,
+  onSelectAllDrugSubtypes,
+  onClearDrugSubtypes,
+  onSelectAllClassSubtypes,
+  onClearClassSubtypes,
 }: GraphFilterPanelProps) {
     const allNodes = graph? [graph.root, ...graph.nodes]: [];
   function getCount(
@@ -44,72 +52,114 @@ export default function GraphFilterPanel({
     ).length;
   }
   return (
-    <div className="absolute left-4 top-4 z-10 w-64 rounded-xl border border-slate-800 bg-slate-900/95 p-4 shadow-xl">
-      <h2 className="text-sm font-semibold text-white">
-        Graph Filters
-      </h2>
+  <div className="absolute left-4 top-4 z-10 w-64 rounded-xl border border-slate-800 bg-slate-900/95 p-4 shadow-xl">
+    <h2 className="text-sm font-semibold text-white">
+      Graph Filters
+    </h2>
 
-      <div className="mt-4">
+    {/* Drug concepts */}
+    <div className="mt-4">
+      <div className="flex items-center justify-between">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Drug Concepts
         </p>
 
-        <div className="mt-2 space-y-2">
-          {DRUG_FILTERS.map((filter) => (
-            <label
-              key={filter.subtype}
-              className="flex cursor-pointer items-center gap-2 text-sm text-slate-300"
-            >
-              <input
-                type="checkbox"
-                checked={drugSubtypes.has(filter.subtype)}
-                onChange={() =>
-                  onToggleDrugSubtype(filter.subtype)
-                }
-              />
+        <div className="flex gap-2 text-xs">
+          <button
+            type="button"
+            onClick={onSelectAllDrugSubtypes}
+            className="text-slate-400 transition hover:text-white"
+          >
+            All
+          </button>
 
-              <span className="flex flex-1 items-center justify-between gap-2">
-                <span>{filter.label}</span>
-
-                <span className="text-xs tabular-nums text-slate-500">
-                  {getCount("DRUG", filter.subtype)}
-                </span>
-              </span>
-            </label>
-          ))}
+          <button
+            type="button"
+            onClick={onClearDrugSubtypes}
+            className="text-slate-400 transition hover:text-white"
+          >
+            None
+          </button>
         </div>
       </div>
 
-      <div className="mt-5">
+      <div className="mt-2 space-y-2">
+        {DRUG_FILTERS.map((filter) => (
+          <label
+            key={filter.subtype}
+            className="flex cursor-pointer items-center gap-2 text-sm text-slate-300"
+          >
+            <input
+              type="checkbox"
+              checked={drugSubtypes.has(filter.subtype)}
+              onChange={() =>
+                onToggleDrugSubtype(filter.subtype)
+              }
+            />
+
+            <span className="flex flex-1 items-center justify-between gap-2">
+              <span>{filter.label}</span>
+
+              <span className="text-xs tabular-nums text-slate-500">
+                {getCount("DRUG", filter.subtype)}
+              </span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
+
+    {/* Drug classes */}
+    <div className="mt-5">
+      <div className="flex items-center justify-between">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Drug Classes
         </p>
 
-        <div className="mt-2 space-y-2">
-          {CLASS_FILTERS.map((filter) => (
-            <label
-              key={filter.subtype}
-              className="flex cursor-pointer items-center gap-2 text-sm text-slate-300"
-            >
-              <input
-                type="checkbox"
-                checked={classSubtypes.has(filter.subtype)}
-                onChange={() =>
-                  onToggleClassSubtype(filter.subtype)
-                }
-              />
+        <div className="flex gap-2 text-xs">
+          <button
+            type="button"
+            onClick={onSelectAllClassSubtypes}
+            className="text-slate-400 transition hover:text-white"
+          >
+            All
+          </button>
 
-              <span className="flex flex-1 items-center justify-between gap-2">
-                <span>{filter.label}</span>
-
-                <span className="text-xs tabular-nums text-slate-500">
-                  {getCount("CLASS", filter.subtype)}
-                </span>
-              </span>
-            </label>
-          ))}
+          <button
+            type="button"
+            onClick={onClearClassSubtypes}
+            className="text-slate-400 transition hover:text-white"
+          >
+            None
+          </button>
         </div>
       </div>
+
+      <div className="mt-2 space-y-2">
+        {CLASS_FILTERS.map((filter) => (
+          <label
+            key={filter.subtype}
+            className="flex cursor-pointer items-center gap-2 text-sm text-slate-300"
+          >
+            <input
+              type="checkbox"
+              checked={classSubtypes.has(filter.subtype)}
+              onChange={() =>
+                onToggleClassSubtype(filter.subtype)
+              }
+            />
+
+            <span className="flex flex-1 items-center justify-between gap-2">
+              <span>{filter.label}</span>
+
+              <span className="text-xs tabular-nums text-slate-500">
+                {getCount("CLASS", filter.subtype)}
+              </span>
+            </span>
+          </label>
+        ))}
+      </div>
     </div>
-  );
+  </div>
+);
 }
