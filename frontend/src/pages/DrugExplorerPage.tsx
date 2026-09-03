@@ -5,18 +5,21 @@ import Sidebar from "../components/Sidebar";
 import GraphCanvas from "../components/GraphCanvas";
 import DrugDetailsPanel from "../components/DrugDetailsPanel";
 import RelationshipDetailsPanel from "../components/RelationshipDetailsPanel";
+import GraphFilterPanel from "../components/GraphFilterPanel";
 import {
   expandDrug,
   getDrugGraph,
   ingestDrug,
 } from "../api/drugs";
-
 import type {
   DrugGraph,
   DrugGraphNode,
   DrugGraphEdge,
 } from "../types/drug";
-
+type GraphFilters = {
+  drugSubtypes: Set<string>;
+  classSubtypes: Set<string>;
+};
 export default function DrugExplorerPage() {
   const [graph, setGraph] =
     useState<DrugGraph | null>(null);
@@ -34,6 +37,24 @@ export default function DrugExplorerPage() {
     useState<string | null>(null);
   const [selectedEdge, setSelectedEdge] =
     useState<Edge | null>(null);
+  const [filters, setFilters] = useState<GraphFilters>({
+    drugSubtypes: new Set([
+        "IN",
+        "PIN",
+        "BN",
+        "SCD",
+        "SBD",
+        "SCDC",
+        "SCDF",
+        "SCDG",
+    ]),
+    classSubtypes: new Set([
+        "ATC1-4",
+        "MOA",
+        "EPC",
+        "PE",
+    ]),
+    });
   function mergeGraphs(
     current: DrugGraph,
     incoming: DrugGraph
@@ -161,6 +182,39 @@ export default function DrugExplorerPage() {
     setSelectedEdge(edge);
     setSelectedNode(null);
   }
+  function toggleDrugSubtype(subtype: string) {
+  setFilters((current) => {
+    const next = new Set(current.drugSubtypes);
+
+    if (next.has(subtype)) {
+      next.delete(subtype);
+    } else {
+      next.add(subtype);
+    }
+
+    return {
+      ...current,
+      drugSubtypes: next,
+    };
+  });
+}
+
+function toggleClassSubtype(subtype: string) {
+  setFilters((current) => {
+    const next = new Set(current.classSubtypes);
+
+    if (next.has(subtype)) {
+      next.delete(subtype);
+    } else {
+      next.add(subtype);
+    }
+
+    return {
+      ...current,
+      classSubtypes: next,
+    };
+  });
+}
   return (
     <div className="flex h-screen w-screen bg-slate-950 text-white">
       <Sidebar
@@ -174,12 +228,19 @@ export default function DrugExplorerPage() {
             {error}
           </div>
         )}
-
+        <GraphFilterPanel
+            drugSubtypes={filters.drugSubtypes}
+            classSubtypes={filters.classSubtypes}
+            onToggleDrugSubtype={toggleDrugSubtype}
+            onToggleClassSubtype={toggleClassSubtype}
+            />
         <GraphCanvas
-          graph={graph}
-          onNodeSelect={handleNodeSelect}
-          onEdgeSelect={handleEdgeSelect}
-        />
+            graph={graph}
+            onNodeSelect={handleNodeSelect}
+            onEdgeSelect={handleEdgeSelect}
+            drugSubtypes={filters.drugSubtypes}
+            classSubtypes={filters.classSubtypes}
+            />
       </main>
 
       {selectedNode && (

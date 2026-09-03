@@ -27,6 +27,8 @@ type GraphCanvasProps = {
   graph: DrugGraph | null;
   onNodeSelect: (node: Node) => void;
   onEdgeSelect: (edge: Edge) => void;
+  drugSubtypes?: Set<string>;
+  classSubtypes?: Set<string>;
 };
 const nodeTypes = {
   drug: DrugNode,
@@ -288,6 +290,8 @@ export default function GraphCanvas({
   graph,
   onNodeSelect,
   onEdgeSelect,
+  drugSubtypes,
+  classSubtypes,
 }: GraphCanvasProps) {
   const [
     nodes,
@@ -307,11 +311,44 @@ export default function GraphCanvas({
       setEdges([]);
       return;
     }
+    const visibleGraphNodes = [
+        graph.root,
+        ...graph.nodes,
+        ].filter((node) => {
+        if (node.id === graph.root.id) {
+            return true;
+        }
 
-    const graphNodes: Node[] = [
-      graph.root,
-      ...graph.nodes,
-    ].map((drug) => ({
+        if (node.node_type === "DRUG") {
+            return (
+            drugSubtypes === undefined ||
+            drugSubtypes.has(node.subtype)
+            );
+        }
+
+        if (node.node_type === "CLASS") {
+            return (
+            classSubtypes === undefined ||
+            classSubtypes.has(node.subtype)
+            );
+        }
+
+        return true;
+        });
+
+        const visibleNodeIds = new Set(
+        visibleGraphNodes.map((node) => node.id)
+        );
+
+        const visibleGraphEdges =
+        graph.edges.filter(
+            (edge) =>
+            visibleNodeIds.has(edge.source_id) &&
+            visibleNodeIds.has(edge.target_id)
+        );
+
+    const graphNodes: Node[] =
+  visibleGraphNodes.map((drug) => ({
       id: drug.id,
 
       position: {
@@ -338,13 +375,13 @@ export default function GraphCanvas({
         "rounded-xl border border-slate-700 bg-slate-900 text-white shadow-lg",
     }));
 
-    const graphEdges: Edge[] = graph.edges.map((edge) => ({
-        id: `${edge.source_id}-${edge.target_id}-${edge.relationship_type}`,
-        source: edge.source_id,
+    const graphEdges: Edge[] = visibleGraphEdges.map((edge) => ({
+        id: `${edge.source_id}-${edge.target_id}-${edge.relationship_type}-${edge.relationship_source}`,        source: edge.source_id,
         target: edge.target_id,
 
         data: {
             relationshipType: edge.relationship_type,
+            relationshipSource: edge.relationship_source,
         },
 
         type: "smoothstep",
@@ -425,6 +462,8 @@ export default function GraphCanvas({
     });
   }, [
     graph,
+    drugSubtypes,
+    classSubtypes,
     setNodes,
     setEdges,
   ]);

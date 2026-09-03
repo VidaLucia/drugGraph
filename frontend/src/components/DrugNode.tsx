@@ -7,6 +7,8 @@ import {
 export type DrugNodeData = {
   label: string;
   termType: string;
+  nodeType: "DRUG" | "CLASS";
+  source: string;
   synonym?: string | null;
   isRoot?: boolean;
 };
@@ -23,6 +25,11 @@ const TERM_TYPE_LABELS: Record<string, string> = {
   SBDF: "Branded Drug Form",
   DFG: "Dose Form Group",
   DF: "Dose Form",
+
+  "ATC1-4": "ATC Class",
+  MOA: "Mechanism of Action",
+  EPC: "Pharmacologic Class",
+  PE: "Physiologic Effect",
 };
 
 const TERM_TYPE_STYLES: Record<string, string> = {
@@ -41,6 +48,11 @@ const TERM_TYPE_STYLES: Record<string, string> = {
 
   DFG: "border-amber-500/60 bg-amber-950",
   DF: "border-orange-500/60 bg-orange-950",
+
+  "ATC1-4": "border-yellow-500/60 bg-yellow-950",
+  MOA: "border-red-500/60 bg-red-950",
+  EPC: "border-indigo-500/60 bg-indigo-950",
+  PE: "border-lime-500/60 bg-lime-950",
 };
 
 export default function DrugNode({
@@ -49,7 +61,8 @@ export default function DrugNode({
 }: NodeProps) {
   const drugData =
     data as DrugNodeData;
-
+  const isClass =
+    drugData.nodeType === "CLASS";
   const typeStyle =
     TERM_TYPE_STYLES[
       drugData.termType
@@ -94,13 +107,21 @@ export default function DrugNode({
 
       <div className="flex items-center justify-between gap-3">
         <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
-          {typeLabel}
+            {typeLabel}
         </span>
 
-        <span className="font-mono text-[10px] text-slate-500">
-          {drugData.termType}
-        </span>
-      </div>
+        <div className="flex items-center gap-2">
+            {isClass && (
+            <span className="rounded-md border border-slate-600 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-300">
+                Class
+            </span>
+            )}
+
+            <span className="font-mono text-[10px] text-slate-500">
+            {drugData.termType}
+            </span>
+        </div>
+    </div>
 
       <div className="mt-2 break-words text-sm font-semibold text-white">
         {drugData.label}
